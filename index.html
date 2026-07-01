@@ -293,8 +293,22 @@
     margin-top:8px;
   }
 
+  .diag{
+    background:#1c2b2c;
+    color:#e4f5f5;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:12px;
+    line-height:1.7;
+    padding:14px 18px;
+    border-radius:10px;
+    margin-bottom:20px;
+    white-space:pre-wrap;
+    word-break:break-all;
+  }
+  .diag b{ color:#7fe0e0; }
+
   @media print{
-    #assignBtn, .actions-row, .progress, .reset-link, header .eyebrow { display:none; }
+    #assignBtn, .actions-row, .progress, .reset-link, header .eyebrow, .diag { display:none; }
     body{ background:#fff; padding:0; }
     .panel{ box-shadow:none; border:none; }
   }
@@ -302,6 +316,7 @@
 </head>
 <body>
 <div class="wrap">
+  <div class="diag" id="diagPanel">Loading diagnostics...</div>
   <header>
     <div class="eyebrow">DENU 1721 · Introduction to Perio</div>
     <h1>OHI Challenge — Case Assignment</h1>
@@ -341,7 +356,7 @@
   <footer>
     Cases sourced from <em>OHI Challenge 2025</em> (DENU 1721: Introduction to Perio).<br>
     This tool only assigns the case. Grading follows the separate class rubric.<br>
-    <span style="opacity:.55;">Build 2026-07-01.3</span>
+    <span style="opacity:.55;" id="buildTag">Build 2026-07-02.1-DIAG</span>
   </footer>
 </div>
 
@@ -524,21 +539,47 @@
     });
   }
 
+  const drawHistory = [];
+
   function assignCase(){
     refillIfNeeded();
     const id = remaining.shift();
     roundUsed.push(id);
+    drawHistory.push(id);
     const c = cases.find(x => x.id === id);
     showCase(c);
     renderProgress();
+    renderDiagnostics();
+  }
+
+  function renderDiagnostics(){
+    const el = document.getElementById('diagPanel');
+    if(!el) return;
+    const hasCrypto = !!(window.crypto && window.crypto.getRandomValues);
+    const mathSample = Math.random().toFixed(6);
+    const cryptoSample = hasCrypto
+      ? (window.crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296).toFixed(6)
+      : 'unavailable';
+    const build = document.getElementById('buildTag') ? document.getElementById('buildTag').textContent : '?';
+    const url = window.location.href;
+    el.innerHTML =
+      '<b>DIAGNOSTICS</b> (delete this panel once randomization is confirmed working)\n' +
+      build + '\n' +
+      'URL: ' + url + '\n' +
+      'crypto.getRandomValues available: ' + hasCrypto + '\n' +
+      'Live sample - Math.random(): ' + mathSample + '  |  crypto sample: ' + cryptoSample + '\n' +
+      '(reload the page a few times - these two sample numbers should look different every time)\n' +
+      'Draw order this session: ' + (drawHistory.length ? drawHistory.join(', ') : '(none yet - click Assign My Case)');
   }
 
   function resetSession(){
     remaining = [];
     roundUsed = [];
+    drawHistory.length = 0;
     document.getElementById('caseCard').classList.remove('show');
     document.getElementById('placeholderPanel').style.display = 'block';
     renderProgress();
+    renderDiagnostics();
   }
 
   document.getElementById('assignBtn').addEventListener('click', assignCase);
@@ -546,6 +587,7 @@
   document.getElementById('printBtn').addEventListener('click', () => window.print());
 
   renderProgress();
+  renderDiagnostics();
 </script>
 </body>
 </html>
